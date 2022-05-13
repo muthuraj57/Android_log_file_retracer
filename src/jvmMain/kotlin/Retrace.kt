@@ -31,11 +31,31 @@ class Processor : MappingProcessor {
 }
 
 fun retrace(mappingFile: File, logFile: File) {
+    println("retrace() called with: mappingFile = $mappingFile, logFile = $logFile")
+    if (logFile.isFile) {
+        //Retrace files starts with log_ and ends with .txt
+        if (logFile.name.startsWith("log_") && logFile.extension == "txt") {
+            retraceFile(mappingFile, logFile)
+        }
+        return
+    }
+    if (logFile.isDirectory) {
+        println("logFile.listFiles() -> ${logFile.listFiles().contentToString()}")
+        logFile.listFiles().forEach {
+            println("calling retrace on $it")
+            retrace(mappingFile, it)
+        }
+    }
+}
+
+fun retraceFile(mappingFile: File, logFile: File) {
+    println("retracing ${logFile.path}..")
     val processor = Processor()
     MappingReader(mappingFile).pump(processor)
 
     //Log tag class name extraction regex.
-    val classNameRegEx = "(\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}.\\d{3} \\d+ \\d+ \\w ([a-z\\d\$-._]+):\\d+)".toRegex()
+    val classNameRegEx =
+        "(\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}.\\d{3}\\s+\\d+\\s+\\d+\\s+\\w\\s+([a-z\\d\$-._]+):\\d+)".toRegex()
     val objRefRegEx = "\\[([a-z\\d\$-._]+)@[a-z\\d+]*\\]".toRegex()
     val stackTraceRegEx = "(?:\\s*%c:.*)|(?:\\s*at\\s+%c.%m\\s*\\(.*?(?::%l)?\\)\\s*)"
     val exceptionPrefix = "E AndroidRuntime:"
@@ -59,7 +79,8 @@ fun retrace(mappingFile: File, logFile: File) {
                 if (exceptionLines.isNotEmpty()) {
 
                     //Create a new file and write the stacktrace it in.
-                    val obfuscatedStackTraceFile = File(logFile.parent, logFile.name + "_retrace_obfuscated_temp.txt")
+                    val obfuscatedStackTraceFile =
+                        File(logFile.parent, logFile.name + "_retrace_obfuscated_temp.txt")
                     obfuscatedStackTraceFile.printWriter().use {
                         exceptionLines.forEach { exceptionLine ->
                             it.println(exceptionLine)
@@ -121,4 +142,5 @@ fun retrace(mappingFile: File, logFile: File) {
             index++
         }
     }
+    println("retracing completed for ${logFile.path}..")
 }
