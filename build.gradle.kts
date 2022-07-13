@@ -1,6 +1,5 @@
 import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("multiplatform")
@@ -45,5 +44,9 @@ compose.desktop {
 }
 
 dependencies {
-    commonMainImplementation(files("/Users/muthu-3955/Library/Android/sdk/tools/proguard/lib/proguard.jar", "/Users/muthu-3955/Library/Android/sdk/tools/proguard/lib/retrace.jar"))
+    commonMainImplementation("com.guardsquare:proguard-base:7.2.2")
+    commonMainImplementation("com.guardsquare:proguard-retrace:7.2.2")
+
+    commonMainImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
+    commonMainImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.6.4")
 }

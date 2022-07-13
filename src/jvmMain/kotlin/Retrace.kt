@@ -1,8 +1,10 @@
+import kotlinx.coroutines.*
 import proguard.obfuscate.MappingProcessor
 import proguard.obfuscate.MappingReader
 import proguard.retrace.ReTrace
 import java.io.File
-import java.io.PrintStream
+import java.io.LineNumberReader
+import java.io.PrintWriter
 
 class Processor : MappingProcessor {
     val classNameMap = mutableMapOf<String, String>()
@@ -13,29 +15,54 @@ class Processor : MappingProcessor {
         return true
     }
 
-    override fun processFieldMapping(p0: String?, p1: String?, p2: String?, p3: String?) {
+    override fun processFieldMapping(
+        className: String?,
+        fieldType: String?,
+        fieldName: String?,
+        newClassName: String?,
+        newFieldName: String?
+    ) {
 
     }
 
     override fun processMethodMapping(
-        p0: String?,
-        p1: Int,
-        p2: Int,
-        p3: String?,
-        p4: String?,
-        p5: String?,
-        p6: String?
+        className: String?,
+        firstLineNumber: Int,
+        lastLineNumber: Int,
+        methodReturnType: String?,
+        methodName: String?,
+        methodArguments: String?,
+        newClassName: String?,
+        newFirstLineNumber: Int,
+        newLastLineNumber: Int,
+        newMethodName: String?
     ) {
 
     }
 }
 
+typealias RetraceJob = () -> Unit
+
 fun retrace(mappingFile: File, logFile: File) {
     println("retrace() called with: mappingFile = $mappingFile, logFile = $logFile")
+    runBlocking {
+        withContext(Dispatchers.Default) {
+            val jobs = mutableListOf<RetraceJob>()
+            getRetraceJobs(mappingFile, logFile, jobs)
+            jobs.map {
+                async(Dispatchers.IO) { it.invoke() }
+            }.awaitAll()
+            println("all retracing completed withContext")
+        }
+    }
+    println("all retracing completed - end")
+}
+
+private fun getRetraceJobs(mappingFile: File, logFile: File, jobs: MutableList<RetraceJob>) {
     if (logFile.isFile) {
         //Retrace files starts with log_ and ends with .txt
         if (logFile.name.startsWith("log_") && logFile.extension == "txt") {
-            retraceFile(mappingFile, logFile)
+            jobs += { retraceFile(mappingFile, logFile) }
         }
         return
     }
@@ -43,7 +70,7 @@ fun retrace(mappingFile: File, logFile: File) {
         println("logFile.listFiles() -> ${logFile.listFiles().contentToString()}")
         logFile.listFiles().forEach {
             println("calling retrace on $it")
-            retrace(mappingFile, it)
+            getRetraceJobs(mappingFile, it, jobs)
         }
     }
 }
@@ -57,7 +84,7 @@ fun retraceFile(mappingFile: File, logFile: File) {
     val classNameRegEx =
         "(\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}.\\d{3}\\s+\\d+\\s+\\d+\\s+\\w\\s+([a-z\\d\$-._]+):\\d+)".toRegex()
     val objRefRegEx = "\\[([a-z\\d\$-._]+)@[a-z\\d+]*\\]".toRegex()
-    val stackTraceRegEx = "(?:\\s*%c:.*)|(?:\\s*at\\s+%c.%m\\s*\\(.*?(?::%l)?\\)\\s*)"
+    val stackTraceRegEx = "(?:.*?\\bat\\s+%c\\.%m\\s*\\(%s(?::%l)?\\)\\s*(?:~\\[.*\\])?)|(?:(?:.*?[:\"]\\s+)?%c(?::.*)?)"
     val exceptionPrefix = "E AndroidRuntime:"
 
     val lines = logFile.readLines()
@@ -91,14 +118,13 @@ fun retraceFile(mappingFile: File, logFile: File) {
                     val deobfuscatedStackTraceFile =
                         File(logFile.parent, logFile.name + "_retrace_deobfuscated_temp.txt")
                     deobfuscatedStackTraceFile.createNewFile()
-                    val outStream = System.out
-                    System.setOut(PrintStream(deobfuscatedStackTraceFile.outputStream()))
 
                     //Retrace the obfuscated stacktrace.
-                    ReTrace(stackTraceRegEx, false, mappingFile, obfuscatedStackTraceFile).execute()
-
-                    //Reset System.out
-                    System.setOut(outStream)
+                    ReTrace(stackTraceRegEx, ReTrace.REGULAR_EXPRESSION2, true, false, mappingFile)
+                        .retrace(
+                            LineNumberReader(obfuscatedStackTraceFile.reader()),
+                            PrintWriter(deobfuscatedStackTraceFile)
+                        )
 
                     //Write the retraced stacktrace to the original output file.
                     deobfuscatedStackTraceFile.readLines().forEach { stacktraceLine ->
