@@ -15,7 +15,7 @@ jobs:
           java-version: 17
 
       - name: Build with Gradle
-        run: ./gradlew :desktop:packageDmg --stacktrace
+        run: ./gradlew packageDmg --stacktrace
 
       - name: Upload build binaries
         uses: actions/upload-artifact@v2
