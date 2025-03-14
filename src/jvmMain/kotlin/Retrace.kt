@@ -82,7 +82,7 @@ fun retraceFile(mappingFile: File, logFile: File) {
 
     //Log tag class name extraction regex.
     val classNameRegEx =
-        "(\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}.\\d{3}\\s+\\d+\\s+\\d+\\s+\\w\\s+([a-z\\d\$-._]+):\\d+)".toRegex()
+        "(\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}.\\d{3}\\s+\\d+\\s+\\d+\\s+\\w\\s+([A-Za-z\\d\$-._]+):\\d+)".toRegex()
     val objRefRegEx = "\\[([a-z\\d\$-._]+)@[a-z\\d+]*\\]".toRegex()
     val stackTraceRegEx = "(?:.*?\\bat\\s+%c\\.%m\\s*\\(%s(?::%l)?\\)\\s*(?:~\\[.*\\])?)|(?:(?:.*?[:\"]\\s+)?%c(?::.*)?)"
     val exceptionPrefix = "E AndroidRuntime:"
@@ -96,6 +96,7 @@ fun retraceFile(mappingFile: File, logFile: File) {
 
         while (index < lines.size) {
             val line = lines[index]
+            println("line: $line")
 
             val exceptionIndex = line.indexOf(exceptionPrefix)
             if (exceptionIndex != -1) {
