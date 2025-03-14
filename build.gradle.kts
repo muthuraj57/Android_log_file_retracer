@@ -2,8 +2,9 @@ import org.jetbrains.compose.compose
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 
 plugins {
-    kotlin("multiplatform")
-    id("org.jetbrains.compose")
+    alias(libs.plugins.jetbrainsCompose)
+    alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.compose.compiler)
 }
 
 group = "com.muthura.logretrace"
@@ -18,7 +19,7 @@ repositories {
 kotlin {
     jvm {
         compilations.all {
-            kotlinOptions.jvmTarget = "11"
+            kotlinOptions.jvmTarget = "17"
         }
         withJava()
     }
@@ -44,9 +45,9 @@ compose.desktop {
 }
 
 dependencies {
-    commonMainImplementation("com.guardsquare:proguard-base:7.2.2")
-    commonMainImplementation("com.guardsquare:proguard-retrace:7.2.2")
+    commonMainImplementation(libs.proguard.base)
+    commonMainImplementation(libs.proguard.retrace)
 
-    commonMainImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    commonMainImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.6.4")
+    commonMainImplementation(libs.coroutines.core)
+    commonMainImplementation(libs.coroutines.swing)
 }

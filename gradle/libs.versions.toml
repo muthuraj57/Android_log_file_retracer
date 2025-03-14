@@ -1,0 +1,18 @@
+[versions]
+kotlin = "2.1.10"
+compose-plugin = "1.7.3"
+
+proguard = "7.6.1"
+coroutines = "1.10.1"
+
+[libraries]
+proguard-base = { module = "com.guardsquare:proguard-base", version.ref = "proguard"}
+proguard-retrace = { module = "com.guardsquare:proguard-retrace", version.ref = "proguard"}
+
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines"}
+coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "coroutines"}
+
+[plugins]
+jetbrainsCompose = { id = "org.jetbrains.compose", version.ref = "compose-plugin" }
+kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
