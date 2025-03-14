@@ -10,6 +10,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.AwtWindow
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.awt.FileDialog
 import java.awt.Frame
@@ -96,7 +97,7 @@ fun App() {
 
                     val scope = rememberCoroutineScope()
                     Button(modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 40.dp), onClick = {
-                        scope.launch {
+                        scope.launch(Dispatchers.IO) {
                             if (mappingFile == null) {
                                 scaffoldState.snackbarHostState.showSnackbar("Select mapping file first.")
                                 return@launch
