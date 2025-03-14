@@ -18,7 +18,7 @@ jobs:
         run: ./gradlew packageDmg --stacktrace
 
       - name: Upload build binaries
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: build-binaries-macos
           path: '**/build/compose/binaries'
