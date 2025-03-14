@@ -84,8 +84,10 @@ fun retraceFile(mappingFile: File, logFile: File) {
     val classNameRegEx =
         "(\\d{2}-\\d{2}\\s\\d{2}:\\d{2}:\\d{2}.\\d{3}\\s+\\d+\\s+\\d+\\s+\\w\\s+([A-Za-z\\d\$-._]+):\\d+)".toRegex()
     val objRefRegEx = "\\[([a-z\\d\$-._]+)@[a-z\\d+]*\\]".toRegex()
-    val stackTraceRegEx = "(?:.*?\\bat\\s+%c\\.%m\\s*\\(%s(?::%l)?\\)\\s*(?:~\\[.*\\])?)|(?:(?:.*?[:\"]\\s+)?%c(?::.*)?)"
+    val stackTraceRegEx =
+        "(?:.*?\\bat\\s+%c\\.%m\\s*\\(%s(?::%l)?\\)\\s*(?:~\\[.*\\])?)|(?:(?:.*?[:\"]\\s+)?%c(?::.*)?)"
     val exceptionPrefix = "E AndroidRuntime:"
+    var lastFatalExceptionLineIndex = -1
 
     val lines = logFile.readLines()
 //    val outputFile = File(logFile.parentFile, logFile.name + "_deobfuscated.txt")
@@ -97,6 +99,10 @@ fun retraceFile(mappingFile: File, logFile: File) {
         while (index < lines.size) {
             val line = lines[index]
             println("line: $line")
+
+            if (line.contains("E AndroidRuntime: FATAL EXCEPTION: ", ignoreCase = false)) {
+                lastFatalExceptionLineIndex = index
+            }
 
             val exceptionIndex = line.indexOf(exceptionPrefix)
             if (exceptionIndex != -1) {
@@ -127,6 +133,13 @@ fun retraceFile(mappingFile: File, logFile: File) {
                             PrintWriter(deobfuscatedStackTraceFile)
                         )
 
+                    if (lastFatalExceptionLineIndex != -1) {
+                        val dateAndTime = lines[lastFatalExceptionLineIndex]
+                            .split(" ")
+                            .take(2)
+                            .joinToString(separator = " ")
+                        out.println("App crashed on $dateAndTime...")
+                    }
                     //Write the retraced stacktrace to the original output file.
                     deobfuscatedStackTraceFile.readLines().forEach { stacktraceLine ->
                         out.println(stacktraceLine)
